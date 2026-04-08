@@ -38,10 +38,16 @@ private:
 public:
     any_ptr() : cb(nullptr) {}
 
+    any_ptr(std::nullptr_t) : cb(nullptr) {}
+
     any_ptr(const any_ptr &other) : cb(other.cb) {
         if (cb) {
             cb->ref_count++;
         }
+    }
+
+    any_ptr(any_ptr &&other) noexcept : cb(other.cb) {
+        other.cb = nullptr;
     }
 
     template <class T> 
@@ -75,6 +81,31 @@ public:
                 cb->ref_count++;
             }
         }
+        return *this;
+    }
+
+    any_ptr &operator=(any_ptr &&other) noexcept {
+        if (this != &other) {
+            if (cb) {
+                cb->ref_count--;
+                if (cb->ref_count == 0) {
+                    delete cb;
+                }
+            }
+            cb = other.cb;
+            other.cb = nullptr;
+        }
+        return *this;
+    }
+
+    any_ptr &operator=(std::nullptr_t) {
+        if (cb) {
+            cb->ref_count--;
+            if (cb->ref_count == 0) {
+                delete cb;
+            }
+        }
+        cb = nullptr;
         return *this;
     }
 
